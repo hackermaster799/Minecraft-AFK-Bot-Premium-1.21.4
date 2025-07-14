@@ -1,9 +1,10 @@
-     const mineflayer = require('mineflayer');
+const mineflayer = require('mineflayer');
 const { pathfinder } = require('mineflayer-pathfinder');
 
 let afkInterval;
 let afkTimeRemaining = 0;
 let isPaused = false;
+let isMuted = false;
 
 function formatTime(seconds) {
   const h = Math.floor(seconds / 3600);
@@ -28,14 +29,17 @@ function createBot() {
 
   bot.loadPlugin(pathfinder);
 
-  bot.once('login', () => console.log('✅ Bot has logged in.'));
-  bot.once('end', () => {
-    console.log('🔄 Bot disconnected. Reconnecting...');
-    setTimeout(createBot, 5000);
+  bot.once('login', () => {
+    if (!isMuted) bot.chat('/gamemode creative');
   });
 
-  bot.on('spawn', () => console.log('🚀 Bot joined the server.'));
-  bot.on('error', (err) => console.log(`❌ Error: ${err}`));
+  bot.once('spawn', () => {
+    bot.chat('/gamemode creative');
+    bot.chat('/tp @s 0 64 0');
+  });
+
+  bot.once('end', () => setTimeout(createBot, 5000));
+  bot.on('error', () => {}); // Tyliai ignoruoja
 
   bot.on('messagestr', (message) => {
     if (message.includes(bot.username)) return;
@@ -48,14 +52,13 @@ function createBot() {
         if (command[3].includes('h')) time *= 3600;
         else if (command[3].includes('m')) time *= 60;
         afkTimeRemaining = time;
-        bot.chat(`Time: ${formatTime(time)}`);
-        bot.chat('/gamemode survival');
+        if (!isMuted) bot.chat(`Time: ${formatTime(time)}`);
         afkInterval = setInterval(() => {
           if (!isPaused) {
             afkTimeRemaining--;
             if (afkTimeRemaining <= 0) {
               clearInterval(afkInterval);
-              bot.chat('/gamemode spectator');
+              if (!isMuted) bot.chat('AFK time ended.');
             }
           }
         }, 1000);
@@ -63,28 +66,26 @@ function createBot() {
 
       case '$stop':
         isPaused = true;
-        bot.chat('Timer stopped.');
+        if (!isMuted) bot.chat('Timer stopped.');
         break;
 
       case '$resume':
         if (afkTimeRemaining > 0 && isPaused) {
           isPaused = false;
-          bot.chat(`Back AFK for: ${formatTime(afkTimeRemaining)}`);
-          bot.chat('/gamemode survival');
+          if (!isMuted) bot.chat(`Back AFK for: ${formatTime(afkTimeRemaining)}`);
         } else {
-          bot.chat('No timer has been set.');
+          if (!isMuted) bot.chat('No timer has been set.');
         }
         break;
 
       case '$checktime':
-        bot.chat(`Time remain: ${formatTime(afkTimeRemaining)}`);
+        if (!isMuted) bot.chat(`Time remain: ${formatTime(afkTimeRemaining)}`);
         break;
 
       case '$break':
         clearInterval(afkInterval);
         afkTimeRemaining = 0;
-        bot.chat('/gamemode spectator');
-        bot.chat('Timer stopped.');
+        if (!isMuted) bot.chat('AFK ended manually.');
         break;
 
       case '$addtime':
@@ -92,8 +93,18 @@ function createBot() {
         if (command[3].includes('h')) add *= 3600;
         else if (command[3].includes('m')) add *= 60;
         afkTimeRemaining += add;
-        bot.chat(`Time added: ${formatTime(add)}`);
-        bot.chat(`Time remain: ${formatTime(afkTimeRemaining)}`);
+        if (!isMuted) bot.chat(`Time added: ${formatTime(add)}`);
+        if (!isMuted) bot.chat(`Time remain: ${formatTime(afkTimeRemaining)}`);
+        break;
+
+      case '$mute':
+        isMuted = true;
+        bot.chat('Bot muted.');
+        break;
+
+      case '$unmute':
+        isMuted = false;
+        bot.chat('Bot unmuted.');
         break;
     }
   });
