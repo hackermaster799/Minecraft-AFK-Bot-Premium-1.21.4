@@ -24,88 +24,18 @@ function createBot() {
     version: '1.21.4',
     debug: true,
     viewDistance: 'far',
-    hideErrors: false
+    hideErrors: false,
+    keepAlive: true
   });
 
   bot.loadPlugin(pathfinder);
 
   bot.once('login', () => {
-    if (!isMuted) bot.chat('/gamemode creative');
+    setTimeout(() => {
+      if (!isMuted) bot.chat('/gamemode creative');
+    }, 3000); // laukia 3 sek po login
   });
 
   bot.once('spawn', () => {
-    bot.chat('/gamemode creative');
-    bot.chat('/tp @s 0 64 0');
-  });
-
-  bot.once('end', () => setTimeout(createBot, 5000));
-  bot.on('error', () => {}); // Tyliai ignoruoja
-
-  bot.on('messagestr', (message) => {
-    if (message.includes(bot.username)) return;
-    const command = message.split(' ');
-    const username = command[1]?.replace(':', '');
-
-    switch (command[2]) {
-      case '$bot':
-        let time = parseInt(command[3]);
-        if (command[3].includes('h')) time *= 3600;
-        else if (command[3].includes('m')) time *= 60;
-        afkTimeRemaining = time;
-        if (!isMuted) bot.chat(`Time: ${formatTime(time)}`);
-        afkInterval = setInterval(() => {
-          if (!isPaused) {
-            afkTimeRemaining--;
-            if (afkTimeRemaining <= 0) {
-              clearInterval(afkInterval);
-              if (!isMuted) bot.chat('AFK time ended.');
-            }
-          }
-        }, 1000);
-        break;
-
-      case '$stop':
-        isPaused = true;
-        if (!isMuted) bot.chat('Timer stopped.');
-        break;
-
-      case '$resume':
-        if (afkTimeRemaining > 0 && isPaused) {
-          isPaused = false;
-          if (!isMuted) bot.chat(`Back AFK for: ${formatTime(afkTimeRemaining)}`);
-        } else {
-          if (!isMuted) bot.chat('No timer has been set.');
-        }
-        break;
-
-      case '$checktime':
-        if (!isMuted) bot.chat(`Time remain: ${formatTime(afkTimeRemaining)}`);
-        break;
-
-      case '$break':
-        clearInterval(afkInterval);
-        afkTimeRemaining = 0;
-        if (!isMuted) bot.chat('AFK ended manually.');
-        break;
-
-      case '$addtime':
-        let add = parseInt(command[3]);
-        if (command[3].includes('h')) add *= 3600;
-        else if (command[3].includes('m')) add *= 60;
-        afkTimeRemaining += add;
-        if (!isMuted) bot.chat(`Time added: ${formatTime(add)}`);
-        if (!isMuted) bot.chat(`Time remain: ${formatTime(afkTimeRemaining)}`);
-        break;
-
-      case '$mute':
-        isMuted = true;
-        bot.chat('Bot muted.');
-        break;
-
-      case '$unmute':
-        isMuted = false;
-        bot.chat('Bot unmuted.');
-        break;
-    }
-  });
-}
+    setTimeout(() => {
+      if (!isMuted
